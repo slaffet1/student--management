@@ -15,32 +15,59 @@ pipeline {
         
         stage('Build') {
             steps {
-                echo 'Compilation du projet Maven...'
+                echo 'Compilation du projet...'
                 sh 'mvn clean compile'
             }
         }
         
-        stage('Test') {
+        stage('SonarQube Analysis') {
             steps {
-                echo 'Exécution des tests...'
-                sh 'mvn test -DskipTests'
+                echo 'Analyse de la qualité du code...'
+                withSonarQubeEnv('SonarQube') {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+        
+        stage('Quality Gate') {
+            steps {
+                echo 'Vérification du Quality Gate...'
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
         
         stage('Package') {
             steps {
-                echo 'Création du fichier JAR...'
+                echo 'Création du JAR...'
                 sh 'mvn package -DskipTests'
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                echo 'Construction de l\'image Docker...'
+                sh 'docker build -t student-management:latest .'
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                echo 'Déploiement du conteneur...'
+                sh 'docker stop student-app || true'
+                sh 'docker rm student-app || true'
+                sh 'docker run -d --name student-app -p 8090:8090 student-management:latest'
             }
         }
     }
     
     post {
         success {
-            echo '✅ Build réussi !'
+            echo ' Pipeline réussi : Code de qualité déployé !'
         }
         failure {
-            echo '❌ Build échoué !'
+            echo 'Pipeline échoué : Vérifiez les logs SonarQube ou Jenkins'
         }
     }
 }
