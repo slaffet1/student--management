@@ -5,6 +5,10 @@ pipeline {
         maven 'maven'
     }
     
+    environment {
+        SONAR_TOKEN = credentials('sonarqube-token')
+    }
+    
     stages {
         stage('Checkout') {
             steps {
@@ -24,7 +28,13 @@ pipeline {
             steps {
                 echo 'Analyse de la qualité du code...'
                 withSonarQubeEnv('SonarQube') {
-                    sh 'mvn sonar:sonar'
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=student-management \
+                        -Dsonar.projectName="Student Management" \
+                        -Dsonar.host.url=http://localhost:9000 \
+                        -Dsonar.token=${SONAR_TOKEN}
+                    '''
                 }
             }
         }
@@ -64,10 +74,10 @@ pipeline {
     
     post {
         success {
-            echo ' Pipeline réussi : Code de qualité déployé !'
+            echo '✅ Pipeline réussi : Code de qualité déployé !'
         }
         failure {
-            echo 'Pipeline échoué : Vérifiez les logs SonarQube ou Jenkins'
+            echo '❌ Pipeline échoué : Vérifiez les logs SonarQube ou Jenkins'
         }
     }
 }
