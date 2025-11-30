@@ -1,10 +1,13 @@
 pipeline {
     agent any
+     triggers {
+            githubPush()
+        }
     
     tools {
         maven 'maven'
     }
-    
+
     environment {
         SONAR_TOKEN = credentials('sonarqube-token')
     }
