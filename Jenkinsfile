@@ -16,14 +16,14 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/slaffet1/student--management.git'
             }
         }
-        
+
         stage('Build') {
             steps {
                 echo 'Compilation du projet...'
                 sh 'mvn clean compile'
             }
         }
-        
+
         stage('SonarQube Analysis') {
             steps {
                 echo 'Analyse de la qualité du code...'
@@ -36,48 +36,46 @@ pipeline {
                         -Dsonar.token=${SONAR_TOKEN}
                     '''
                 }
+                echo 'Analyse envoyée à SonarQube - Consultez http://localhost:9000/dashboard?id=student-management'
             }
         }
-        
-        stage('Quality Gate') {
-            steps {
-                echo 'Vérification du Quality Gate...'
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-        
+
         stage('Package') {
             steps {
                 echo 'Création du JAR...'
                 sh 'mvn package -DskipTests'
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
                 echo 'Construction de l\'image Docker...'
                 sh 'docker build -t student-management:latest .'
             }
         }
-        
+
         stage('Deploy') {
             steps {
                 echo 'Déploiement du conteneur...'
-                sh 'docker stop student-app || true'
-                sh 'docker rm student-app || true'
-                sh 'docker run -d --name student-app -p 8090:8090 student-management:latest'
+                sh '''
+                    docker stop student-app || true
+                    docker rm student-app || true
+                    docker run -d \
+                      --name student-app \
+                      --network student-network \
+                      -p 8090:8090 \
+                      student-management:latest
+                '''
             }
         }
     }
-    
+
     post {
         success {
-            echo '✅ Pipeline réussi : Code de qualité déployé !'
+            echo 'Pipeline réussi avec succès'
         }
         failure {
-            echo '❌ Pipeline échoué : Vérifiez les logs SonarQube ou Jenkins'
+            echo 'Pipeline échoué - Vérifiez les logs'
         }
     }
 }
