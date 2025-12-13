@@ -12,7 +12,7 @@ pipeline {
     environment {
         SONAR_TOKEN = credentials('sonarqube-token')
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKERHUB_REPO = 'mohamedsaid.leffar@esprit.tn/student-management'
+        DOCKERHUB_REPO = 'leffatsaid/student-management'
         IMAGE_TAG = "${BUILD_NUMBER}"
         K8S_NAMESPACE = 'devops'
     }
