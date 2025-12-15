@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: student-management
-        image: slaffet1/student-management:latest
+        image: leffatsaid/student-management:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8090
